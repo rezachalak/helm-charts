@@ -1,0 +1,146 @@
+# @file values.yaml
+# @description Configuration values for the backup-zen Helm chart
+
+/**
+ * @typedef {Object} BackupZenConfig
+ * @property {string} databaseType - Type of database to backup. Can be PostgreSQL, MySQL, or MongoDB.
+ * @property {string} hostname - Hostname of the database server.
+ * @property {number} port - Port number of the database server.
+ * @property {('oneByOne'|'adminUser')} credentialType - Type of credentials to use for database access.
+ * @property {string} [credsSecretName] - Name of the secret containing database credentials.
+ */
+
+/**
+ * Database configuration
+ * @type {BackupZenConfig}
+ */
+databaseType: PostgreSQL
+hostname: postgres
+port: 5432
+credentialType: adminUser
+# credsSecretName: mycreds-secret
+
+/**
+ * @typedef {Object} GlobalConfig
+ * @property {string} namespace - Kubernetes namespace to deploy the chart.
+ * @property {boolean} createNamespace - Whether to create the namespace if it doesn't exist.
+ * @property {boolean} rotation - Enable backup rotation.
+ * @property {Object} rotation_config - Configuration for rotated backups.
+ * @property {number} rotation_config.dayOfWeekToKeep - Day of the week to keep weekly backups (1-7 = Monday-Sunday).
+ * @property {number} rotation_config.daysToKeep - Number of days to keep daily backups.
+ * @property {number} rotation_config.weeksToKeep - Number of weeks to keep weekly backups.
+ * @property {boolean} teamsNotification - Enable Microsoft Teams notifications.
+ * @property {string} succeededTeamsURL - Webhook URL for successful backup notifications.
+ * @property {string} failedTeamsURL - Webhook URL for failed backup notifications.
+ */
+
+/**
+ * Global configuration
+ * @type {GlobalConfig}
+ */
+global:
+  namespace: maintenance
+  createNamespace: true
+  rotation: true
+  rotation_config:
+    dayOfWeekToKeep: 5
+    daysToKeep: 7
+    weeksToKeep: 5
+  teamsNotification: false
+  succeededTeamsURL: https://myorg.webhook.office.com/webhookb1/blob-blob-blob
+  failedTeamsURL: https://myorg.webhook.office.com/webhookb2/blob-blob-blob
+
+/**
+ * @typedef {Object} CronjobConfig
+ * @property {string} pullPolicy - Image pull policy for the cronjob.
+ * @property {string[]} imagePullSecrets - Secrets for pulling private images.
+ * @property {string} restartPolicy - Restart policy for the cronjob.
+ * @property {Object} resources - Resource requests and limits for the cronjob.
+ * @property {string} schedule - Cron schedule for the backup job.
+ * @property {number} failedJobsHistoryLimit - Number of failed jobs to keep in history.
+ * @property {number} successfulJobsHistoryLimit - Number of successful jobs to keep in history.
+ * @property {Object} storage - Storage configuration for backups.
+ */
+
+/**
+ * Cronjob configuration
+ * @type {CronjobConfig}
+ */
+cronjob:
+  pullPolicy: Always
+  imagePullSecrets: []
+  restartPolicy: Never
+  resources:
+    requests:
+      cpu: 1
+      memory: "1Gi"
+    limits:
+      cpu: 2
+      memory: "2Gi"
+  schedule: "0 0 * * *"
+  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 3
+  storage:
+    createPVC: true
+    PVCName: mydb-backup
+    storageClass: standard
+    accessMode: ReadWriteOnce
+    PVCSize: 20Gi
+
+/**
+ * @typedef {Object} AdminUserConfig
+ * @property {string} username - Admin username for database access.
+ * @property {string} password - Admin password for database access.
+ */
+
+/**
+ * Admin user configuration
+ * @type {AdminUserConfig}
+ */
+adminUser:
+  username: myuser
+  password: mypassword
+
+/**
+ * @typedef {Object} OneByOneConfig
+ * @property {Array<Object>} creds - Array of credential objects for individual databases.
+ * @property {string} creds[].database_name - Name of the database.
+ * @property {string} creds[].username - Username for the database.
+ * @property {string} creds[].password - Password for the database.
+ */
+
+/**
+ * One-by-one backup configuration
+ * @type {OneByOneConfig}
+ */
+oneByOne:
+  creds:
+    - database_name: db1
+      username: user1
+      password: password1
+
+/**
+ * @typedef {Object} BackupUploadConfig
+ * @property {boolean} active - Enable backup upload to object storage.
+ * @property {('MinIO'|'AWS_S3')} objectStorageType - Type of object storage to use.
+ * @property {Object} AWS_S3 - AWS S3 configuration.
+ * @property {Object} MINIO - MinIO configuration.
+ */
+
+/**
+ * Backup upload configuration
+ * @type {BackupUploadConfig}
+ */
+backupUpload:
+  active: false
+  objectStorageType: AWS_S3
+  AWS_S3:
+    AWS_ACCESS_KEY_ID: "access"
+    AWS_DEFAULT_REGION: "us-west-1"
+    AWS_SECRET_ACCESS_KEY: "secret"
+    BUCKET_NAME: "backupzen-s3"
+  MINIO:
+    MINIO_ACCESS_KEY_ID: access-key
+    MINIO_URL: http://localhost:9000
+    MINIO_SECRET_ACCESS_KEY: secret
+    BUCKET_NAME: backupzen-minio
